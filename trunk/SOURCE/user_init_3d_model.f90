@@ -78,7 +78,113 @@
 
     INTEGER(iwp) ::  l !< running index surface orientation
     INTEGER(iwp) ::  m !< running index surface elements
+    INTEGER(iwp) ::  i
+    INTEGER(iwp) ::  j
+    INTEGER(iwp) ::  k
 
+    DO  i = nxlg, nxrg
+       DO  j = nysg, nyng
+          DO k = nzb, nzt
+!!!! Eurasian Basin !!!!
+             IF (abs(zu(k)).le.15.0) THEN
+                pt(k,j,i) = -0.27 + 273.15
+             ELSE
+                pt(k,j,i) = 273.15 - 1.91 - 0.2*zu(k)                   &
+                     - (4.05e-3)*zu(k)*zu(k)                             &
+                     - (3.85e-5)*zu(k)*zu(k)*zu(k)                       &
+                     - (2.10e-7)*zu(k)*zu(k)*zu(k)*zu(k)                 &
+                     - (6.47e-10)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)           &
+                     - (8.74e-13)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)
+             ENDIF
+!!!! Canadian Basin !!!!
+!             IF (abs(zu(k)).le.25.0) THEN
+!                pt(k,j,i) = -1.5 + 273.15
+!             ELSE
+!                pt(k,j,i) = 273.15 - 7.84 - 0.42*zu(k)                   &
+!                     - (8.0e-3)*zu(k)*zu(k)                              &
+!                     - (6.75e-5)*zu(k)*zu(k)*zu(k)                       &
+!                     - (2.66e-7)*zu(k)*zu(k)*zu(k)*zu(k)                 &
+!                     - (4.02e-10)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)
+!             ENDIF
+          ENDDO
+          u(:,j,i)  = 0.0_wp
+          v(:,j,i)  = 0.0_wp
+       ENDDO
+    ENDDO
+!
+!--       Mask topography
+    u = MERGE( u, 0.0_wp, BTEST( wall_flags_0, 1 ) )
+    v = MERGE( v, 0.0_wp, BTEST( wall_flags_0, 2 ) )
+!
+    IF ( ibc_uv_b /= 1  .AND.  .NOT.  spinup )  THEN
+       DO  i = nxlg, nxrg
+          DO  j = nysg, nyng
+             DO  k = nzb, nzt
+                u(k,j,i) = MERGE( u(k,j,i), 0.0_wp,                      &
+                     BTEST( wall_flags_0(k,j,i), 20 ) )
+                v(k,j,i) = MERGE( v(k,j,i), 0.0_wp,                      &
+                     BTEST( wall_flags_0(k,j,i), 21 ) )
+             ENDDO
+          ENDDO
+       ENDDO
+    ENDIF
+!
+    IF ( ocean )  THEN
+       DO  i = nxlg, nxrg
+          DO  j = nysg, nyng
+             DO k = nzb, nzt
+!!!! Eurasian Basin !!!!
+                IF(abs(zu(k)).le.15.0) THEN
+                   sa(k,j,i) = 30.5
+                ELSE
+                   sa(k,j,i) = 27.3 - 0.37*zu(k) - (8.67e-3)*zu(k)*zu(k)      &
+                        - (1.09e-4)*zu(k)*zu(k)*zu(k)                         &
+                        - (7.42e-7)*zu(k)*zu(k)*zu(k)*zu(k)                   &
+                        - (2.58e-9)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)             &
+                        - (3.60e-12)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)
+                ENDIF
+!!!! Canadian Basin !!!!
+!                IF(abs(zu(k)).le.25.0) THEN
+!                   sa(k,j,i) = 27.0
+!                ELSE
+!                   sa(k,j,i) = 22.36 - 0.3*zu(k) - (3.83e-3)*zu(k)*zu(k)      &
+!                        - (2.54e-5)*zu(k)*zu(k)*zu(k)                         &
+!                        - (8.53e-8)*zu(k)*zu(k)*zu(k)*zu(k)                   &
+!                        - (1.18e-10)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)
+!                ENDIF
+             ENDDO
+          ENDDO
+       ENDDO
+    ENDIF
+
+    IF ( passive_scalar )  THEN
+       DO  i = nxlg, nxrg
+          DO  j = nysg, nyng
+             DO k = nzb, nzt
+!!!! Eurasian Basin !!!!
+                IF(abs(zu(k)).le.15.0) THEN
+                   s(k,j,i) = 0.0
+                ELSE
+                   s(k,j,i) = -0.90 - (1.04e-1)*zu(k) - (2.75e-3)*zu(k)*zu(k)       &
+                        - (3.95e-5)*zu(k)*zu(k)*zu(k)                         &
+                        - (3.13e-7)*zu(k)*zu(k)*zu(k)*zu(k)                   &
+                        - (1.29e-9)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)            &
+                        - (2.15e-12)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)
+                ENDIF
+!!!! Canadian Basin !!!!
+!                IF(abs(zu(k)).le.25.0) THEN
+!                   s(k,j,i) = 0.0
+!                ELSE
+!                   s(k,j,i) = 0.59 - (1.72e-2)*zu(k) - (3.82e-4)*zu(k)*zu(k)       &
+!                        - (5.16e-6)*zu(k)*zu(k)*zu(k)                         &
+!                        - (4.14e-8)*zu(k)*zu(k)*zu(k)*zu(k)                   &
+!                        - (1.79e-10)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)            &
+!                        - (3.16e-13)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)*zu(k)
+!                ENDIF
+             ENDDO
+          ENDDO
+       ENDDO
+    ENDIF
 !
 !-- Initialization of surface-related quantities.
 !-- The following example shows required initialization of surface quantitites
